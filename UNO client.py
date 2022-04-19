@@ -7,7 +7,12 @@ EL UNO VERSIÓN RÁPIDA
 #from random import random
 #import numpy as np
 
-jugadores = 2
+
+from multiprocessing.connection import Client
+from multiprocessing import Process, Manager, Value, Lock
+import traceback
+import sys
+jugadores = 3
  
         
 
@@ -36,12 +41,12 @@ class Mazo(Carta):
                 
             self.cartas.append(Carta("Cambio de color","Neutro"))   
     def muestraCarta(self): #muestra la ultima carta 
-        return f" {self.cartas[-1].valor} {self.cartas[-1].color}"
+        return f"{self.cartas[-1].valor} {self.cartas[-1].color}"
 
          
     def __str__(self):
         for carta in self.cartas:
-            carta.__str__()
+            print(carta)
 
 
 #clase tablero 
@@ -95,13 +100,14 @@ class Tablero(Carta):
 
 #clase jugador 
 class Player():
-    def __init__(self, nombre):
-        self.nombre = nombre 
-        self.mano = []
+    def __init__(self, idd):
+        import random
+        self.idd = idd 
+        self.mano = [random.choice(mazo.cartas) for i in range(7)]
     
     def __str__ (self):
         for carta in self.mano:
-            print(carta.__str__())
+            print(carta)
         #return f"Jugador {self.nombre} tiene {self.mano}"
     
     
@@ -140,17 +146,17 @@ j1 = Player("Maria")
 #print(j1.__str__())
 
 j1.robar(7,mazo.cartas)
-print(j1.__str__())
+#print(j1.__str__())
      
 
 tablero = Tablero()
-print("La carta del tablero es:")
-print(tablero.carta.__str__()) #muestra la carta del tablero 
+#print("La carta del tablero es:")
+#print(tablero.carta.__str__()) #muestra la carta del tablero 
 
 j1.echar_carta (tablero)
-print(j1.__str__())
+#print(j1.__str__())
 
-print(tablero.carta.__str__())
+#print(tablero.carta.__str__())
 
 """  
 j2 = Player("Marla")

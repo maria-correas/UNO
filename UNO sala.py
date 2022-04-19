@@ -49,18 +49,18 @@ class Mazo(Carta):
                 
             self.cartas.append(Carta("Cambio de color","Neutro"))   
     def muestraCarta(self): #muestra la ultima carta 
-        return f" {self.cartas[-1].valor} {self.cartas[-1].color}"
+        return f" {self.cartas[-1].valor},{self.cartas[-1].color}"
 
          
-    def __str__2 (self):
+    def __str__ (self):
         for carta in self.cartas:
-            carta.__str__()
+            print(carta)
 
 
 #clase tablero 
 class Tablero(Carta):
     def __init__(self,manager):
-        import random  #Como conseguir que carta sea compartida
+        import random  # duda Como conseguir que carta sea compartida
         self.carta = manager.Carta(random.choice(self.valores),random.choice(self.colores))
         self.players = manager.list([Player(i) for i in range(3)])
         self.contador= manager.list([7,7,7])
@@ -68,11 +68,12 @@ class Tablero(Carta):
         self.lock = Lock()
 
     
-    def get_player(self, side):
-        return self.players[side]
+    def get_player(self, idd):
+        return self.players[idd]
 
     def get_carta(self):
         return self.carta
+    
     def change_carta(self,cartita):
         self.lock.acquire()
         self.carta = cartita
@@ -123,14 +124,14 @@ class Tablero(Carta):
 #clase jugador 
 class Player():
     
-    def __init__(self, idd, nombre):
+    def __init__(self, idd):
         import random
-        self.nombre = nombre 
+        self.idd = idd 
         self.mano = [random.choice(mazo.cartas) for i in range(7)]
     
     def __str__ (self):
         for carta in self.mano:
-            print(carta.__str__())
+            print(carta)
         #return f"Jugador {self.nombre} tiene {self.mano}"
     
     
@@ -143,7 +144,10 @@ class Player():
           
             
     def puede_echar(self, carta, tablero):
-        return ((carta.valor == tablero.carta.valor) or (carta.color == tablero.carta.color))
+        return ((carta.valor == tablero.carta.valor) or 
+                (carta.color == tablero.carta.color) or 
+                (carta.valor == 'Cambio de color'))
+
 
 
     def echar_carta (self, tablero):
@@ -179,7 +183,7 @@ def player(idd, conn, tablero):
                             lista.pop(idd)
                             b = random.choice(lista)
                             print(f'player {idd} blocked')
-                            tablero.players[b].dormir()
+                            tablero.players[b].dormir()    #duda
                         elif cartita.valor == '+2':
                             print(f'Oh no!, el jugador {idd} ha sacado un chupate 2, todos a robar')
                             tablero.player[(idd+1)%3].robar(2,mazo.cartas)
