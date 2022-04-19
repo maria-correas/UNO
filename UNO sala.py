@@ -61,7 +61,7 @@ class Mazo(Carta):
 class Tablero(Carta):
     def __init__(self,manager):
         import random  # duda Como conseguir que carta sea compartida
-        self.carta = manager.Carta(random.choice(self.valores),random.choice(self.colores))
+        self.carta = manager.dict({"carta": Carta(random.choice(self.valores),random.choice(self.colores))})
         self.players = manager.list([Player(i) for i in range(3)])
         self.contador= manager.list([7,7,7])
         self.running = Value('i',1)
@@ -72,11 +72,11 @@ class Tablero(Carta):
         return self.players[idd]
 
     def get_carta(self):
-        return self.carta
+        return self.carta["carta"]
     
     def change_carta(self,cartita):
         self.lock.acquire()
-        self.carta = cartita
+        self.carta["carta"] = cartita
         self.lock.release()
         
     def change_contador(self):
@@ -98,23 +98,24 @@ class Tablero(Carta):
         self.lock.release()
         
     def puede_echar(self, carta):
-        return ((carta.valor == self.carta.valor) or
-                (carta.color == self.carta.color)) or (carta.valor == 'Cambio de color')
+        return ((carta.valor == self.carta["carta"].valor) or
+                (carta.color == self.carta["carta"].color)) or (carta.valor == 'Cambio de color')
 
 
         
     def get_info(self):
         info = {
             
-            'carta_mesa': self.carta.get_carta(),
+            'carta_mesa': self.carta["carta"],
             'contador': list(self.contador),
-            'is_running': self.running.value == 1
+            'is_running': self.running.value == 1,
+            'players': self.players
         }
         return info
 
         
     def __str__(self):
-        return self.carta.muestra_carta()
+        return str(self.carta["carta"]) + ' ' + str(self.contador)
        
 
 
@@ -144,11 +145,15 @@ class Player():
           
             
     def puede_echar(self, carta, tablero):
-        return ((carta.valor == tablero.carta.valor) or 
-                (carta.color == tablero.carta.color) or 
+        return ((carta.valor == tablero.carta["carta"].valor) or 
+                (carta.color == tablero.carta["carta"].color) or 
                 (carta.valor == 'Cambio de color'))
-
-
+    
+    def dormir(self):
+        import random 
+        import time 
+        time.sleep(random.random()*3)
+        
 
     def echar_carta (self, tablero):
         seguir = True
@@ -164,38 +169,55 @@ class Player():
             contador += 1
    
 mazo = Mazo() 
-         
+
+
+
+
+def trans(mensaje):
+    lista = mensaje.split(",")
+    return lista
+
+
+
+
+
+      
 def player(idd, conn, tablero):
     import random
     try:
         print(f"starting player {idd}:{tablero.get_info()}")
         conn.send( (idd, tablero.get_info()) )
         
-        while tablero.is_running():
+        while tablero.is_running() :
             command = ""
             while command != "next":
                 command = conn.recv()
-                if command.isdigit():
-                    cartita = tablero.players[idd].mano[int(command)]
+                mensaje = trans(command)
+                if mensaje[0].isdigit():
+                    cartita = tablero.players[idd].mano[int(mensaje[0])]
                     if tablero.puede_echar(cartita):
                         if cartita.valor == 'Bloqueo':
-                            lista=[0,1,2]
-                            lista.pop(idd)
-                            b = random.choice(lista)
-                            print(f'player {idd} blocked')
-                            tablero.players[b].dormir()    #duda
+                            bloqueado = int(mensaje[1])
+                            print(f'player {bloqueado} blocked')
+                            tablero.players[bloqueado].dormir()    #duda
                         elif cartita.valor == '+2':
                             print(f'Oh no!, el jugador {idd} ha sacado un chupate 2, todos a robar')
                             tablero.player[(idd+1)%3].robar(2,mazo.cartas)
                             tablero.player[(idd+2)%3].robar(2,mazo.cartas)
                         elif cartita.valor == 'Cambio de color':
-                             cartita.color = random.choice(colores)
+                             cartita.color = mensaje[1]
+                             print(f'el jugador {idd} ha cambiado de color al {mensaje[1]}')
                         tablero.change_carta(cartita)
-                        tablero.players[idd].mano.pop(int(command))
+                        tablero.players[idd].mano.pop(int(mensaje[0]))
                         tablero.change_contador()
-                            
+                elif 0 in tablero.contador:
+                    j =[i for i in range (0,3) if tablero.contador[i] == 0][0]
+                    print(f'El jugador {j} ha ganado pringados')
                 elif command == "quit":
                     tablero.stop()
+                
+                print(tablero)
+                
 
             conn.send(tablero.get_info())
     except:
@@ -218,14 +240,15 @@ def main(ip_address):
                 conn = listener.accept()
                 players[n_player] = Process(target=player,
                                             args=(n_player, conn, tablero))
-                n_player += 1
+                print(f'jugador {n_player} aceptado')
                 if n_player == 2:
                     players[0].start()
                     players[1].start()
                     players[2].start()
-                    n_player = 0
-                    players = [None, None,None]
-                    tablero = Tablero(manager)
+                    #n_player = 0
+                    #players = [None, None,None]
+                    #tablero = Tablero(manager)
+                n_player += 1
 
     except Exception as e:
         traceback.print_exc()

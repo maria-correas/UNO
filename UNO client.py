@@ -27,7 +27,7 @@ class Carta():
         self.color = color
     
     def __str__ (self):
-        return f" {self.valor} {self.color}"
+        return f"{self.valor} {self.color}"
     
 
 #mazo que contiene todas las cartas
@@ -40,10 +40,7 @@ class Mazo(Carta):
                 self.cartas.append(Carta(valor,color))
                 
             self.cartas.append(Carta("Cambio de color","Neutro"))   
-    def muestraCarta(self): #muestra la ultima carta 
-        return f"{self.cartas[-1].valor} {self.cartas[-1].color}"
-
-         
+      
     def __str__(self):
         for carta in self.cartas:
             print(carta)
@@ -93,6 +90,7 @@ class Tablero(Carta):
         self.carta = gameinfo['carta_mesa']
         self.contador = gameinfo['contador']
         self.running = gameinfo['is_running']
+        self.players = gameinfo['players']
         
 
     
@@ -106,8 +104,12 @@ class Player():
         self.mano = [random.choice(mazo.cartas) for i in range(7)]
     
     def __str__ (self):
+        lista=[]
         for carta in self.mano:
-            print(carta)
+            lista.append(str(carta))
+        return str(lista)
+            
+        
         #return f"Jugador {self.nombre} tiene {self.mano}"
     
     
@@ -142,18 +144,18 @@ class Player():
 mazo = Mazo() 
 #print(mazo.muestraCarta())
 
-j1 = Player("Maria")
+#j1 = Player("Maria")
 #print(j1.__str__())
 
-j1.robar(7,mazo.cartas)
+#j1.robar(7,mazo.cartas)
 #print(j1.__str__())
      
 
-tablero = Tablero()
+#tablero = Tablero()
 #print("La carta del tablero es:")
 #print(tablero.carta.__str__()) #muestra la carta del tablero 
 
-j1.echar_carta (tablero)
+#j1.echar_carta (tablero)
 #print(j1.__str__())
 
 #print(tablero.carta.__str__())
@@ -172,6 +174,7 @@ def main(ip_address):
             idd,gameinfo = conn.recv()
             print(f"I am playing {idd}")
             tablero.update(gameinfo)
+            print(tablero.players[idd].mano)
             #display = Display(game)
             while tablero.is_running():
                 events = input('¿Qué quieres hacer ahora?') #display.analyze_events(side)
@@ -182,12 +185,13 @@ def main(ip_address):
                 conn.send("next")
                 gameinfo = conn.recv()
                 tablero.update(gameinfo)
+                print(tablero.players[idd].mano)
                 #display.refresh()
                 #display.tick()
     except:
         traceback.print_exc()
-    finally:
-        pygame.quit() #duda como cerrarlo
+    #finally:
+     #   pygame.quit() #duda como cerrarlo
 
 
 if __name__=="__main__":
