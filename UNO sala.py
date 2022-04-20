@@ -106,8 +106,9 @@ class Tablero(Carta):
     def get_info(self):
         info = {
             
+            
             'carta_mesa': self.carta["carta"],
-            'contador': list(self.contador),
+            'contador': self.contador,
             'is_running': self.running.value == 1,
             'players': self.players
         }
@@ -186,8 +187,9 @@ def player(idd, conn, tablero):
     import random
     try:
         print(f"starting player {idd}:{tablero.get_info()}")
-        conn.send( (idd, tablero.get_info()) )
-        
+        conn.send( (idd))#, tablero.get_info()) )
+        conn.send(tablero.get_info())
+        print(tablero)
         while tablero.is_running() :
             command = ""
             while command != "next":
