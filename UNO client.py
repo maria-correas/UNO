@@ -50,7 +50,7 @@ class Mazo(Carta):
 class Tablero(Carta):
     def __init__(self):
         import random
-        self.carta = Carta(random.choice(self.valores),random.choice(self.colores))
+        self.carta = {"carta": Carta(random.choice(self.valores),random.choice(self.colores))}
         self.players = [Player(i) for i in range(3)]
         self.contador= [7,7,7]
         self.running = True
@@ -59,7 +59,7 @@ class Tablero(Carta):
         return self.players[side]
 
     def get_carta(self):
-        return self.carta
+        return self.carta["carta"]
 
     def get_contador(self):
         return self.contador
@@ -74,24 +74,26 @@ class Tablero(Carta):
         self.running = False
         
     def __str__(self):
-        return self.carta.muestra_carta()
-       
+        return str(self.carta["carta"])
+
         
     def get_info(self):
         info = {
             
             'carta_mesa': self.carta.get_carta(),
-            'contador': list(self.contador),
-            'is_running': self.running.value == 1
+            'contador': self.contador,
+            'is_running': self.running.value == 1,
+            'players': None
         }
         return info
 
     def update(self, gameinfo):
-        self.carta = gameinfo['carta_mesa']
+        self.carta["carta"] = gameinfo['carta_mesa']
         self.contador = gameinfo['contador']
         self.running = gameinfo['is_running']
         self.players = gameinfo['players']
         
+   
 
     
 
@@ -122,7 +124,7 @@ class Player():
           
             
     def puede_echar(self, carta, tablero):
-        return ((carta.valor == tablero.carta.valor) or (carta.color == tablero.carta.color))
+        return ((carta.valor == tablero.carta["carta"].valor) or (carta.color == tablero.carta["carta"].color))
 
 
     def echar_carta (self, tablero):
@@ -168,11 +170,14 @@ print(j2.__str__())
 """
 
 def main(ip_address):
+
     try:
         with Client((ip_address, 6000), authkey=b'secret password') as conn:
             tablero = Tablero()
-            idd,gameinfo = conn.recv()
+            idd = conn.recv() #,gameinfo
             print(f"I am playing {idd}")
+            gameinfo = conn.recv()
+            print(gameinfo)
             tablero.update(gameinfo)
             print(tablero.players[idd].mano)
             #display = Display(game)
