@@ -14,14 +14,14 @@ import traceback
 import sys
 jugadores = 3
  
-        
+colores = ["Azul", "Amarillo" , "Rojo", "Verde"]
+valores = ["0","1","2","3","4","5","6","7","8","9", "Bloqueo", "+2"]
+         
 
 #clase carta
 class Carta():
     
-    colores = ["Azul", "Amarillo" , "Rojo", "Verde"]
-    valores = ["0","1","2","3","4","5","6","7","8","9", "Bloqueo", "+2"]
-    
+  
     def __init__(self, valor, color):
         self.valor = valor
         self.color = color
@@ -34,9 +34,12 @@ class Carta():
 class Mazo(Carta):
     
     def __init__(self):
+        colores = ["Azul", "Amarillo" , "Rojo", "Verde"]
+        valores = ["0","1","2","3","4","5","6","7","8","9", "Bloqueo", "+2"]
+ 
         self.cartas =[]
-        for color in self.colores:
-            for valor in self.valores:
+        for color in colores:
+            for valor in valores:
                 self.cartas.append(Carta(valor,color))
                 
             self.cartas.append(Carta("Cambio de color","Neutro"))   
@@ -50,7 +53,10 @@ class Mazo(Carta):
 class Tablero(Carta):
     def __init__(self):
         import random
-        self.carta = {"carta": Carta(random.choice(self.valores),random.choice(self.colores))}
+        colores = ["Azul", "Amarillo" , "Rojo", "Verde"]
+        valores = ["0","1","2","3","4","5","6","7","8","9", "Bloqueo", "+2"]
+ 
+        self.carta = {"carta": Carta(random.choice(valores),random.choice(colores))}
         self.players = [Player(i) for i in range(3)]
         self.contador= [7,7,7]
         self.running = True
@@ -78,8 +84,7 @@ class Tablero(Carta):
 
         
     def get_info(self):
-        info = {
-            
+        info = {            
             'carta_mesa': self.carta.get_carta(),
             'contador': self.contador,
             'is_running': self.running.value == 1,
@@ -177,9 +182,9 @@ def main(ip_address):
             idd = conn.recv() #,gameinfo
             print(f"I am playing {idd}")
             gameinfo = conn.recv()
-            print(gameinfo)
+            #print(gameinfo)
             tablero.update(gameinfo)
-            print(tablero.players[idd].mano)
+            print(tablero.players[idd])
             #display = Display(game)
             while tablero.is_running():
                 events = input('¿Qué quieres hacer ahora?') #display.analyze_events(side)
@@ -190,7 +195,7 @@ def main(ip_address):
                 conn.send("next")
                 gameinfo = conn.recv()
                 tablero.update(gameinfo)
-                print(tablero.players[idd].mano)
+                print(tablero.players[idd])
                 #display.refresh()
                 #display.tick()
     except:

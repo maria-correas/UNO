@@ -27,20 +27,19 @@ valores = ["0","1","2","3","4","5","6","7","8","9", "Bloqueo", "+2"]
 #clase carta
 class Carta():
     
-    colores = ["Azul", "Amarillo" , "Rojo", "Verde"]
-    valores = ["0","1","2","3","4","5","6","7","8","9", "Bloqueo", "+2"]
-    
     def __init__(self, valor, color):
         self.valor = valor
         self.color = color
     
     def __str__ (self):
-        return f"{self.valor},{self.color}"
+        return f"{self.valor} {self.color}"
     
 
 #mazo que contiene todas las cartas
 class Mazo(Carta):
-    
+    colores = ["Azul", "Amarillo" , "Rojo", "Verde"]
+    valores = ["0","1","2","3","4","5","6","7","8","9", "Bloqueo", "+2"]
+ 
     def __init__(self):
         self.cartas =[]
         for color in self.colores:
@@ -49,20 +48,25 @@ class Mazo(Carta):
                 
             self.cartas.append(Carta("Cambio de color","Neutro"))   
     def muestraCarta(self): #muestra la ultima carta 
-        return f" {self.cartas[-1].valor},{self.cartas[-1].color}"
+        return f"{self.cartas[-1].valor} {self.cartas[-1].color}"
 
          
     def __str__ (self):
+        lista =[]
         for carta in self.cartas:
-            print(carta)
+            lista.append(str(carta))
+        return lista
 
 
 #clase tablero 
 class Tablero(Carta):
     def __init__(self,manager):
-        import random  # duda Como conseguir que carta sea compartida
-        self.carta = manager.dict({"carta": Carta(random.choice(self.valores),random.choice(self.colores))})
-        self.players = manager.list([Player(i) for i in range(3)])
+        import random  
+        colores = ["Azul", "Amarillo" , "Rojo", "Verde"]
+        valores = ["0","1","2","3","4","5","6","7","8","9", "Bloqueo", "+2"]
+ 
+        self.carta = manager.dict({"carta": Carta(random.choice(valores),random.choice(colores))})
+        self.players = manager.list([Player(i) for i in range(3)]) #duda
         self.contador= manager.list([7,7,7])
         self.running = Value('i',1)
         self.lock = Lock()
@@ -99,14 +103,13 @@ class Tablero(Carta):
         
     def puede_echar(self, carta):
         return ((carta.valor == self.carta["carta"].valor) or
-                (carta.color == self.carta["carta"].color)) or (carta.valor == 'Cambio de color')
+                (carta.color == self.carta["carta"].color) or 
+                (carta.valor == 'Cambio de color'))
 
 
         
     def get_info(self):
         info = {
-            
-            
             'carta_mesa': self.carta["carta"],
             'contador': self.contador,
             'is_running': self.running.value == 1,
@@ -132,9 +135,8 @@ class Player():
         self.mano = [random.choice(mazo.cartas) for i in range(7)]
     
     def __str__ (self):
-        for carta in self.mano:
-            print(carta)
-        #return f"Jugador {self.nombre} tiene {self.mano}"
+        return str(self.mano)
+        
     
     
     def robar(self, numero, cartas):
@@ -155,7 +157,7 @@ class Player():
         import time 
         time.sleep(random.random()*3)
         
-
+'''
     def echar_carta (self, tablero):
         seguir = True
         contador = 0
@@ -168,7 +170,7 @@ class Player():
                 self.mano.pop(contador)
                 seguir = False
             contador += 1
-   
+'''   
 mazo = Mazo() 
 
 
@@ -184,7 +186,6 @@ def trans(mensaje):
 
       
 def player(idd, conn, tablero):
-    import random
     try:
         print(f"starting player {idd}:{tablero.get_info()}")
         conn.send( (idd))#, tablero.get_info()) )
@@ -201,7 +202,7 @@ def player(idd, conn, tablero):
                         if cartita.valor == 'Bloqueo':
                             bloqueado = int(mensaje[1])
                             print(f'player {bloqueado} blocked')
-                            tablero.players[bloqueado].dormir()    #duda
+                            tablero.players[bloqueado].dormir()    
                         elif cartita.valor == '+2':
                             print(f'Oh no!, el jugador {idd} ha sacado un chupate 2, todos a robar')
                             tablero.player[(idd+1)%3].robar(2,mazo.cartas)
