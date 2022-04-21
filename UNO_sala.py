@@ -25,18 +25,21 @@ valores = ["0","1","2","3","4","5","6","7","8","9", "Bloqueo", "+2"]
         
 
 #clase carta
-class Carta():
+class Carta(object):
     
     def __init__(self, valor, color):
         self.valor = valor
         self.color = color
     
-    def __str__ (self):
+    def __repr__ (self):
         return f"{self.valor} {self.color}"
+    
+    def get_info(self):
+        return self.valor+","+self.color
     
 
 #mazo que contiene todas las cartas
-class Mazo(Carta):
+class Mazo:
     colores = ["Azul", "Amarillo" , "Rojo", "Verde"]
     valores = ["0","1","2","3","4","5","6","7","8","9", "Bloqueo", "+2"]
  
@@ -59,7 +62,7 @@ class Mazo(Carta):
 
 
 #clase tablero 
-class Tablero(Carta):
+class Tablero(object):
     def __init__(self,manager):
         import random  
         colores = ["Azul", "Amarillo" , "Rojo", "Verde"]
@@ -91,7 +94,7 @@ class Tablero(Carta):
         self.lock.release()
 
     def get_contador(self):
-        return self.contador
+        return str(self.contador[0])+","+str(self.contador[1])+","+str(self.contador[2])
 
     def is_running(self):
         return self.running.value == 1
@@ -108,22 +111,29 @@ class Tablero(Carta):
 
 
         
-    def get_info(self):
+    def get_info(self,idd):
         info = {
-            'carta_mesa': self.carta["carta"],
-            'contador': self.contador,
+            'carta_mesa': self.carta["carta"].get_info(),
+            'contador': self.get_contador(),
             'is_running': self.running.value == 1,
-            'players': self.players
+            'player': self.players[idd].get_info()
         }
         return info
 
         
-    def __str__(self):
+    def __repr__(self):
         return str(self.carta["carta"]) + ' ' + str(self.contador)
-       
-
-
     
+    def change_mano(self, idd, n):
+        self.lock.acquire()
+        print(f"sala1: {idd} {n} {self.players[idd].mano}")
+        p = self.players[idd]
+        p.mano.pop(n)
+        self.players[idd] = p
+        print(f"sala2: {self.players[idd].mano}")
+        self.lock.release()
+        
+   
 
 
 #clase jugador 
@@ -134,11 +144,18 @@ class Player():
         self.idd = idd 
         self.mano = [random.choice(mazo.cartas) for i in range(7)]
     
-    def __str__ (self):
+    def __repr__ (self):
         return str(self.mano)
         
     
-    
+    def get_info(self):
+        strr=""
+        for i in range(len(self.mano)):
+            strr += ","+self.mano[i].get_info()
+        salida = str(self.idd) + strr
+        return salida
+        
+        
     def robar(self, numero, cartas):
         import random
         
@@ -187,15 +204,16 @@ def trans(mensaje):
       
 def player(idd, conn, tablero):
     try:
-        print(f"starting player {idd}:{tablero.get_info()}")
+        print(f"starting player {idd}:{tablero.get_info(idd)}")
         conn.send( (idd))#, tablero.get_info()) )
-        print("c1", tablero.get_info())
-        conn.send(tablero.get_info())
+        print("c1", tablero.get_info(idd))
+        conn.send(tablero.get_info(idd))
         print(tablero)
         while tablero.is_running() :
             command = ""
             while command != "next":
                 command = conn.recv()
+                print(f"player:{idd}:{command}:")
                 mensaje = trans(command)
                 if mensaje[0].isdigit():
                     cartita = tablero.players[idd].mano[int(mensaje[0])]
@@ -211,8 +229,10 @@ def player(idd, conn, tablero):
                         elif cartita.valor == 'Cambio de color':
                              cartita.color = mensaje[1]
                              print(f'el jugador {idd} ha cambiado de color al {mensaje[1]}')
+                        
                         tablero.change_carta(cartita)
-                        tablero.players[idd].mano.pop(int(mensaje[0]))
+                        tablero.change_mano(idd,int(mensaje[0]))
+                        print("Hemos borrado el")
                         tablero.change_contador()
                 elif 0 in tablero.contador:
                     j =[i for i in range (0,3) if tablero.contador[i] == 0][0]
@@ -223,7 +243,7 @@ def player(idd, conn, tablero):
                 print(tablero)
                 
 
-            conn.send(tablero.get_info())
+                conn.send(tablero.get_info(idd))
     except:
         traceback.print_exc()
         conn.close()
