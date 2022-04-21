@@ -28,7 +28,7 @@ class Carta():
     
     def __str__ (self):
         return f"{self.valor} {self.color}"
-    
+
 
 #mazo que contiene todas las cartas
 class Mazo(Carta):
@@ -46,18 +46,19 @@ class Mazo(Carta):
       
     def __str__(self):
         for carta in self.cartas:
-            print(carta)
+            str(carta)
 
 
 #clase tablero 
 class Tablero(Carta):
-    def __init__(self):
+    def __init__(self,idd):
         import random
         colores = ["Azul", "Amarillo" , "Rojo", "Verde"]
         valores = ["0","1","2","3","4","5","6","7","8","9", "Bloqueo", "+2"]
  
         self.carta = {"carta": Carta(random.choice(valores),random.choice(colores))}
-        self.players = [Player(i) for i in range(3)]
+        #self.players = [Player(i) for i in range(3)]
+        self.player = Player(idd)
         self.contador= [7,7,7]
         self.running = True
     
@@ -93,16 +94,46 @@ class Tablero(Carta):
         return info
 
     def update(self, gameinfo):
-        self.carta["carta"] = gameinfo['carta_mesa']
-        self.contador = gameinfo['contador']
+        self.carta["carta"] = inverso_carta(gameinfo['carta_mesa'])
+        self.contador = inverso_contador(gameinfo['contador'])
         self.running = gameinfo['is_running']
-        self.players = gameinfo['players']
+        self.player = inverso_player(gameinfo['player'])
         
-   
 
     
+def inverso_carta(info):
+    lista=info.split(",")
+    valor = lista[0]
+    color = lista[1]
+    carta = Carta(valor,color)
+    return str(carta)  
 
-
+def inverso_contador(info):
+    lista=info.split(",")
+    l2 = []
+    for e in lista:
+        en = int(e)
+        l2.append(en)
+    return l2
+        
+def inverso_player(info):
+    lista=info.split(",")
+    idd = int(lista.pop(0))
+    
+    mano=[]
+    for i in range(0, len(lista)-1,2):
+        valor = lista[i]
+        color = lista[i+1]
+        carta = Carta(valor,color)
+        mano.append(str(carta))
+    
+    return idd, mano
+    
+    
+        
+    
+    
+    
 #clase jugador 
 class Player():
     def __init__(self, idd):
@@ -145,8 +176,8 @@ class Player():
                 seguir = False
             contador += 1
             
-            
-        
+
+             
 
 mazo = Mazo() 
 #print(mazo.muestraCarta())
@@ -178,13 +209,15 @@ def main(ip_address):
 
     try:
         with Client((ip_address, 6000), authkey=b'secret password') as conn:
-            tablero = Tablero()
+           
             idd = conn.recv() #,gameinfo
             print(f"I am playing {idd}")
             gameinfo = conn.recv()
-            #print(gameinfo)
+            #print(gameinfo) 
+            tablero = Tablero(idd)
             tablero.update(gameinfo)
-            print(tablero.players[idd])
+            print('nuestra mano es '+ str(tablero.player))
+            print("La carta central es: " + str(tablero.carta))
             #display = Display(game)
             while tablero.is_running():
                 events = input('¿Qué quieres hacer ahora?') #display.analyze_events(side)
@@ -195,7 +228,9 @@ def main(ip_address):
                 conn.send("next")
                 gameinfo = conn.recv()
                 tablero.update(gameinfo)
-                print(tablero.players[idd])
+                print('nuestra mano es '+ str(tablero.player))
+                print("El número de cartas de los jugadores es: " + str(tablero.contador))
+                print("La carta central es: " + str(tablero.carta))
                 #display.refresh()
                 #display.tick()
     except:
