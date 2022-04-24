@@ -39,21 +39,24 @@ class Carta(object):
     
 
 #mazo que contiene todas las cartas
-class Mazo:
-    colores = ["Azul", "Amarillo" , "Rojo", "Verde"]
-    valores = ["0","1","2","3","4","5","6","7","8","9", "Bloqueo", "+2"]
- 
+class Mazo: 
     def __init__(self):
+        import random
         self.cartas =[]
-        for color in self.colores:
-            for valor in self.valores:
+        for color in colores:
+            for valor in valores:
                 self.cartas.append(Carta(valor,color))
-                
             self.cartas.append(Carta("Cambio de color","Neutro"))   
+        random.shuffle(self.cartas) #esto es para barajar las cartas
+         
     def muestraCarta(self): #muestra la ultima carta 
         return f"{self.cartas[-1].valor} {self.cartas[-1].color}"
 
-         
+    def robar(self):
+        carta = self.cartas.pop(0)
+        print(f'mazo ha dado carta {carta}')
+        return carta
+
     def __str__ (self):
         lista =[]
         for carta in self.cartas:
@@ -65,14 +68,13 @@ class Mazo:
 class Tablero(object):
     def __init__(self,manager):
         import random  
-        colores = ["Azul", "Amarillo" , "Rojo", "Verde"]
-        valores = ["0","1","2","3","4","5","6","7","8","9", "Bloqueo", "+2"]
- 
+        #molaria sacar esta carta del mazo 
         self.carta = manager.dict({"carta": Carta(random.choice(valores),random.choice(colores))})
         self.players = manager.list([Player(i) for i in range(3)]) #duda
         self.contador= manager.list([7,7,7])
         self.running = Value('i',1)
         self.lock = Lock()
+        #self.mazo = manager.list(Mazo())
 
     
     def get_player(self, idd):
@@ -110,13 +112,17 @@ class Tablero(object):
                 (carta.valor == 'Cambio de color'))
 
 
+    
+    def string_jugadores(self):
+        strr_p = self.players[0].get_info()+ ";" +self.players[1].get_info()+";"+self.players[2].get_info()
+        return strr_p
         
-    def get_info(self,idd):
+    def get_info(self):
         info = {
             'carta_mesa': self.carta["carta"].get_info(),
             'contador': self.get_contador(),
             'is_running': self.running.value == 1,
-            'player': self.players[idd].get_info()
+            'players': self.string_jugadores()
         }
         return info
 
@@ -133,6 +139,15 @@ class Tablero(object):
         print(f"sala2: {self.players[idd].mano}")
         self.lock.release()
         
+    def robar(self, idd, numero):
+        self.lock.acquire()
+        p = self.players[idd]
+        for i in range (numero):
+            carta = mazo.robar()
+            p.mano.append(carta)
+        self.players[idd] = p
+        self.lock.release()
+        
    
 
 
@@ -140,9 +155,8 @@ class Tablero(object):
 class Player():
     
     def __init__(self, idd):
-        import random
         self.idd = idd 
-        self.mano = [random.choice(mazo.cartas) for i in range(7)]
+        self.mano = [mazo.robar() for i in range(7)]
     
     def __repr__ (self):
         return str(self.mano)
@@ -156,12 +170,12 @@ class Player():
         return salida
         
         
-    def robar(self, numero, cartas):
-        import random
-        
+    def robar(self, numero, mazo): 
+        p = self.mano
         for i in range (numero):
-            carta = random.choice(cartas)
-            self.mano.append(carta)
+            carta = mazo.robar()
+            p.append(carta)
+        self.mano = p
           
             
     def puede_echar(self, carta, tablero):
@@ -172,22 +186,11 @@ class Player():
     def dormir(self):
         import random 
         import time 
+        print('Durmiendo un tiempo')
         time.sleep(random.random()*3)
         
-'''
-    def echar_carta (self, tablero):
-        seguir = True
-        contador = 0
-        while seguir != False and contador < len(self.mano):
-            if self.puede_echar(self.mano[contador], tablero):
-                print("Puede echar esta carta")
-                print(self.mano[contador].__str__())
-                print("_________")
-                tablero.carta = self.mano[contador] #modificamos el tablero 
-                self.mano.pop(contador)
-                seguir = False
-            contador += 1
-'''   
+        
+
 mazo = Mazo() 
 
 
@@ -197,53 +200,59 @@ def trans(mensaje):
     lista = mensaje.split(",")
     return lista
 
-
-
-
-
       
 def player(idd, conn, tablero):
     try:
-        print(f"starting player {idd}:{tablero.get_info(idd)}")
+        print(f"starting player {idd}:{tablero.get_info()}")
         conn.send( (idd))#, tablero.get_info()) )
-        print("c1", tablero.get_info(idd))
-        conn.send(tablero.get_info(idd))
+        print("c1", tablero.get_info())
+        conn.send(tablero.get_info())
         print(tablero)
         while tablero.is_running() :
             command = ""
-            while command != "next":
-                command = conn.recv()
-                print(f"player:{idd}:{command}:")
-                mensaje = trans(command)
-                if mensaje[0].isdigit():
-                    cartita = tablero.players[idd].mano[int(mensaje[0])]
-                    if tablero.puede_echar(cartita):
-                        if cartita.valor == 'Bloqueo':
-                            bloqueado = int(mensaje[1])
-                            print(f'player {bloqueado} blocked')
-                            tablero.players[bloqueado].dormir()    
-                        elif cartita.valor == '+2':
-                            print(f'Oh no!, el jugador {idd} ha sacado un chupate 2, todos a robar')
-                            tablero.player[(idd+1)%3].robar(2,mazo.cartas)
-                            tablero.player[(idd+2)%3].robar(2,mazo.cartas)
-                        elif cartita.valor == 'Cambio de color':
-                             cartita.color = mensaje[1]
-                             print(f'el jugador {idd} ha cambiado de color al {mensaje[1]}')
-                        
-                        tablero.change_carta(cartita)
-                        tablero.change_mano(idd,int(mensaje[0]))
-                        print("Hemos borrado el")
-                        tablero.change_contador()
-                elif 0 in tablero.contador:
-                    j =[i for i in range (0,3) if tablero.contador[i] == 0][0]
-                    print(f'El jugador {j} ha ganado pringados')
-                elif command == "quit":
-                    tablero.stop()
-                
-                print(tablero)
+            #while command != "next":
+            command = conn.recv()
+            print(f"player:{idd}:{command}:")
+            mensaje = trans(command)        
+            if 0 in tablero.contador:
+                j =[i for i in range (0,3) if tablero.contador[i] == 0][0]
+                print(f'El jugador {j} ha ganado pringados')
+                conn.send('Juego acabado, alguien ha ganado')
+                tablero.stop()
+            if mensaje[0].isdigit():
+                cartita = tablero.players[idd].mano[int(mensaje[0])]
+                if tablero.puede_echar(cartita):
+                    if cartita.valor == 'Bloqueo':
+                        bloqueado = int(mensaje[1])
+                        print(f'player {bloqueado} blocked')
+                        tablero.players[bloqueado].dormir()    
+                    elif cartita.valor == '+2':
+                        print(f'Oh no!, el jugador {idd} ha sacado un +2, todos a robar')
+                        tablero.robar((idd+1)%3,2)
+                        tablero.robar((idd+2)%3,2)
+                    elif cartita.valor == 'Cambio de color':
+                        cartita.color = mensaje[1]
+                        print(f'el jugador {idd} ha cambiado de color al {mensaje[1]}')
+                    
+                    tablero.change_carta(cartita)
+                    tablero.change_mano(idd,int(mensaje[0]))
+                    print('Hemos cambiado la carta')
+                    conn.send('Carta aceptada')
+                    tablero.change_contador()
+                else:
+                    print('Carta no aceptada: ')
+                    conn.send('Carta no aceptada con command: '+ str(command))
+            
+            elif command == "quit":
+                conn.send('Cerramos partida')
+                tablero.stop()
+            else:
+                conn.send('mensaje raro, no entiendo con command: '+ str(command))
+            print(tablero)
+            print('enviamos actualización de tablero')
                 
 
-                conn.send(tablero.get_info(idd))
+            conn.send(tablero.get_info())
     except:
         traceback.print_exc()
         conn.close()
@@ -256,10 +265,11 @@ def main(ip_address):
     try:
         with Listener((ip_address, 6000),
                       authkey=b'secret password') as listener:
-            n_player = 0
+            n_player = -1
             players = [None, None,None]
             tablero = Tablero(manager)
             while True:
+                n_player += 1
                 print(f"accepting connection {n_player}")
                 conn = listener.accept()
                 players[n_player] = Process(target=player,
@@ -269,10 +279,10 @@ def main(ip_address):
                     players[0].start()
                     players[1].start()
                     players[2].start()
-                    #n_player = 0
-                    #players = [None, None,None]
-                    #tablero = Tablero(manager)
-                n_player += 1
+                    n_player = -1
+                    players = [None, None,None]
+                    tablero = Tablero(manager)
+                
 
     except Exception as e:
         traceback.print_exc()

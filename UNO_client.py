@@ -21,7 +21,6 @@ valores = ["0","1","2","3","4","5","6","7","8","9", "Bloqueo", "+2"]
 #clase carta
 class Carta():
     
-  
     def __init__(self, valor, color):
         self.valor = valor
         self.color = color
@@ -31,39 +30,37 @@ class Carta():
 
 
 #mazo que contiene todas las cartas
-class Mazo(Carta):
+class Mazo():
     
-    def __init__(self):
-        colores = ["Azul", "Amarillo" , "Rojo", "Verde"]
-        valores = ["0","1","2","3","4","5","6","7","8","9", "Bloqueo", "+2"]
- 
+    def __init__(self): 
+        import random
         self.cartas =[]
         for color in colores:
             for valor in valores:
-                self.cartas.append(Carta(valor,color))
-                
+                self.cartas.append(Carta(valor,color))    
             self.cartas.append(Carta("Cambio de color","Neutro"))   
+        random.shuffle(self.cartas) #esto es para barajar las cartas
+        
       
     def __str__(self):
         for carta in self.cartas:
             str(carta)
-
+    
+    def robar(self):
+        carta = self.cartas.pop(0)
+        return carta
 
 #clase tablero 
-class Tablero(Carta):
-    def __init__(self,idd):
-        import random
-        colores = ["Azul", "Amarillo" , "Rojo", "Verde"]
-        valores = ["0","1","2","3","4","5","6","7","8","9", "Bloqueo", "+2"]
- 
-        self.carta = {"carta": Carta(random.choice(valores),random.choice(colores))}
-        #self.players = [Player(i) for i in range(3)]
-        self.player = Player(idd)
+class Tablero():
+    def __init__(self):
+
+        #self.carta = {"carta": Carta(random.choice(valores),random.choice(colores))}
+        self.carta = {"carta": mazo.robar()}
+        self.players = [Player(i) for i in range(3)]
         self.contador= [7,7,7]
         self.running = True
-    
-    def get_player(self, side):
-        return self.players[side]
+        self.mazo = mazo
+
 
     def get_carta(self):
         return self.carta["carta"]
@@ -97,7 +94,9 @@ class Tablero(Carta):
         self.carta["carta"] = inverso_carta(gameinfo['carta_mesa'])
         self.contador = inverso_contador(gameinfo['contador'])
         self.running = gameinfo['is_running']
-        self.player = inverso_player(gameinfo['player'])
+        for i in range (3):
+            self.players[i]= inverso_player(separa_players(gameinfo['players'])[i])
+
         
 
     
@@ -116,6 +115,12 @@ def inverso_contador(info):
         l2.append(en)
     return l2
         
+
+
+def separa_players(info):
+    lista_players = info.split(";")
+    return lista_players
+    
 def inverso_player(info):
     lista=info.split(",")
     idd = int(lista.pop(0))
@@ -137,9 +142,8 @@ def inverso_player(info):
 #clase jugador 
 class Player():
     def __init__(self, idd):
-        import random
         self.idd = idd 
-        self.mano = [random.choice(mazo.cartas) for i in range(7)]
+        self.mano = [mazo.robar() for i in range(7)] #roba cartas del mazo ya aleatorizado
     
     def __str__ (self):
         lista=[]
@@ -152,58 +156,18 @@ class Player():
     
     
     def robar(self, numero, cartas):
-        import random
-        
         for i in range (numero):
-            carta = random.choice(cartas)
+            carta = mazo.robar()
             self.mano.append(carta)
           
             
     def puede_echar(self, carta, tablero):
-        return ((carta.valor == tablero.carta["carta"].valor) or (carta.color == tablero.carta["carta"].color))
+        return ((carta.valor == tablero.carta["carta"].valor) or (carta.color == tablero.carta["carta"].color) or (carta.valor == "Cambio de color"))
 
-
-    def echar_carta (self, tablero):
-        seguir = True
-        contador = 0
-        while seguir != False and contador < len(self.mano):
-            if self.puede_echar(self.mano[contador], tablero):
-                print("Puede echar esta carta")
-                print(self.mano[contador].__str__())
-                print("_________")
-                tablero.carta = self.mano[contador] #modificamos el tablero 
-                self.mano.pop(contador)
-                seguir = False
-            contador += 1
-            
 
              
 
 mazo = Mazo() 
-#print(mazo.muestraCarta())
-
-#j1 = Player("Maria")
-#print(j1.__str__())
-
-#j1.robar(7,mazo.cartas)
-#print(j1.__str__())
-     
-
-#tablero = Tablero()
-#print("La carta del tablero es:")
-#print(tablero.carta.__str__()) #muestra la carta del tablero 
-
-#j1.echar_carta (tablero)
-#print(j1.__str__())
-
-#print(tablero.carta.__str__())
-
-"""  
-j2 = Player("Marla")
-#print(j2.__str__())
-j2.robar(7,mazo.cartas)
-print(j2.__str__())
-"""
 
 def main(ip_address):
 
@@ -211,24 +175,27 @@ def main(ip_address):
         with Client((ip_address, 6000), authkey=b'secret password') as conn:
            
             idd = conn.recv() #,gameinfo
-            print(f"I am playing {idd}")
+            print(f"Soy el jugador {idd}")
             gameinfo = conn.recv()
             #print(gameinfo) 
-            tablero = Tablero(idd)
+            tablero = Tablero()
             tablero.update(gameinfo)
-            print('nuestra mano es '+ str(tablero.player))
+            print('nuestra mano es '+ str(tablero.players[idd]))
             print("La carta central es: " + str(tablero.carta))
             #display = Display(game)
             while tablero.is_running():
-                events = input('¿Qué quieres hacer ahora?') #display.analyze_events(side)
+                events = input('¿Qué quieres hacer ahora? ') #display.analyze_events(side)
                 #for ev in events:
                 conn.send(events)
                 if events == 'quit':
                     tablero.stop()
-                conn.send("next")
+                recibido = conn.recv()
+                print(recibido)
+                
+                
                 gameinfo = conn.recv()
                 tablero.update(gameinfo)
-                print('nuestra mano es '+ str(tablero.player))
+                print('nuestra mano es '+ str(tablero.players[idd]))
                 print("El número de cartas de los jugadores es: " + str(tablero.contador))
                 print("La carta central es: " + str(tablero.carta))
                 #display.refresh()
