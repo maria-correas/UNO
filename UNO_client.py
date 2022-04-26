@@ -169,10 +169,10 @@ class Player():
 
 mazo = Mazo() 
 
-def main(ip_address):
+def main(ip_address,port):
 
     try:
-        with Client((ip_address, 6000), authkey=b'secret password') as conn:
+        with Client((ip_address, port), authkey=b'secret password') as conn:
            
             idd = conn.recv() #,gameinfo
             print(f"Soy el jugador {idd}")
@@ -208,6 +208,10 @@ def main(ip_address):
 
 if __name__=="__main__":
     ip_address = "127.0.0.1"
-    if len(sys.argv)>1:
+    port= 6000
+    if len(sys.argv)==2:
         ip_address = sys.argv[1]
-    main(ip_address)
+    elif len(sys.argv)>2:
+        ip_address = sys.argv[1]
+        port = int(sys.argv[2])
+    main(ip_address,port)
