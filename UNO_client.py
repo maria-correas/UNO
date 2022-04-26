@@ -198,6 +198,8 @@ def main(ip_address,port):
                 print('nuestra mano es '+ str(tablero.players[idd]))
                 print("El número de cartas de los jugadores es: " + str(tablero.contador))
                 print("La carta central es: " + str(tablero.carta))
+                print("")
+                print("")
                 #display.refresh()
                 #display.tick()
     except:

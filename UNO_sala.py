@@ -74,6 +74,7 @@ class Tablero(object):
         self.contador= manager.list([7,7,7])
         self.running = Value('i',1)
         self.lock = Lock()
+        self.dispo = manager.list([True,True,True])
         #self.mazo = manager.list(Mazo())
 
     
@@ -147,7 +148,36 @@ class Tablero(object):
             p.mano.append(carta)
         self.players[idd] = p
         self.lock.release()
+    
+    def change_dispo(self,idd):
+        self.lock.acquire()
+        p = self.dispo
+        if self.dispo[idd]:
+            p[idd]= False
+        else:
+            p[idd] = True
+        self.dispo = p
+        self.lock.release()
+    
+    def ninguno_dispo(self):
+        self.lock.acquire()
+        for i in range(3):
+            if self.dispo[i]:
+                self.lock.release()
+                return False
+        self.lock.release()
+        return True
+    
+    def change_bloq(self,idd):
+        self.lock.acquire()
+        p = self.players[idd] 
         
+        if p.bloq:
+            p.bloq= False
+        else:
+            p.bloq = True
+        self.players[idd] = p
+        self.lock.release()
    
 
 
@@ -157,7 +187,8 @@ class Player():
     def __init__(self, idd):
         self.idd = idd 
         self.mano = [mazo.robar() for i in range(7)]
-    
+        self.bloq = False 
+        
     def __repr__ (self):
         return str(self.mano)
         
@@ -187,8 +218,8 @@ class Player():
         import random 
         import time 
         print('Durmiendo un tiempo')
-        time.sleep(random.random()*3)
-        
+        time.sleep(random.random()*20)
+
         
 
 mazo = Mazo() 
@@ -213,43 +244,52 @@ def player(idd, conn, tablero):
             #while command != "next":
             command = conn.recv()
             print(f"player:{idd}:{command}:")
-            mensaje = trans(command)        
-            if 0 in tablero.contador:
-                j =[i for i in range (0,3) if tablero.contador[i] == 0][0]
-                print(f'El jugador {j} ha ganado pringados')
-                conn.send('Juego acabado, alguien ha ganado')
-                tablero.stop()
-            if mensaje[0].isdigit():
-                cartita = tablero.players[idd].mano[int(mensaje[0])]
-                if tablero.puede_echar(cartita):
-                    if cartita.valor == 'Bloqueo':
-                        bloqueado = int(mensaje[1])
-                        print(f'player {bloqueado} blocked')
-                        tablero.players[bloqueado].dormir()    
-                    elif cartita.valor == '+2':
-                        print(f'Oh no!, el jugador {idd} ha sacado un +2, todos a robar')
-                        tablero.robar((idd+1)%3,2)
-                        tablero.robar((idd+2)%3,2)
-                    elif cartita.valor == 'Cambio de color':
-                        cartita.color = mensaje[1]
-                        print(f'el jugador {idd} ha cambiado de color al {mensaje[1]}')
-                    
-                    tablero.change_carta(cartita)
-                    tablero.change_mano(idd,int(mensaje[0]))
-                    print('Hemos cambiado la carta')
-                    conn.send('Carta aceptada')
-                    tablero.change_contador()
-                else:
-                    print('Carta no aceptada: ')
-                    conn.send('Carta no aceptada con command: '+ str(command))
-            
-            elif command == "quit":
-                conn.send('Cerramos partida')
-                tablero.stop()
+            mensaje = trans(command) 
+            if tablero.players[idd].bloq:
+                conn.send(" Estas bloqueado ")
+                tablero.change_bloq(idd)
             else:
-                conn.send('mensaje raro, no entiendo con command: '+ str(command))
-            print(tablero)
-            print('enviamos actualización de tablero')
+                if 0 in tablero.contador:
+                    j =[i for i in range (0,3) if tablero.contador[i] == 0][0]
+                    print(f'El jugador {j} ha ganado pringados')
+                    conn.send("Juego acabado,el jugador " + str(j) + " ha ganado...PRINGADOS ")
+                    tablero.stop()
+                if mensaje[0].isdigit() and tablero.contador[idd] > int(mensaje[0]):
+                    cartita = tablero.players[idd].mano[int(mensaje[0])]
+                    if tablero.puede_echar(cartita):
+                        if cartita.valor == 'Bloqueo':
+                            tablero.change_bloq((idd+1)%3)
+                            tablero.change_bloq((idd+2)%3)
+                            conn.send("Hemos bloqueado a todos ")
+                        elif cartita.valor == '+2':
+                            print(f'Oh no!, el jugador {idd} ha sacado un +2, todos a robar')
+                            tablero.robar((idd+1)%3,2)
+                            tablero.robar((idd+2)%3,2)
+                            conn.send("a robar cabrones " )
+                        elif cartita.valor == 'Cambio de color':
+                            cartita.color = mensaje[1]
+                            print(f'el jugador {idd} ha cambiado de color al {mensaje[1]}')
+                            conn.send("Hemos cambiado de color a " + str(mensaje[1]))
+                        else: 
+                            conn.send('Carta aceptada')
+                        tablero.change_carta(cartita)
+                        tablero.change_mano(idd,int(mensaje[0]))
+                        print('Hemos cambiado la carta')
+                        tablero.change_contador()
+                    else:
+                        print('Carta no aceptada: ')
+                        conn.send('Carta no aceptada con command: '+ str(command))
+                elif command == "robar":
+                    tablero.robar(idd,1)
+                    tablero.change_contador()
+                    conn.send("A por ello")
+                elif command == "quit":
+                    conn.send('Cerramos partida')
+                    tablero.stop()
+                else:
+                    conn.send('mensaje raro, no entiendo con command: '+ str(command))
+                print(tablero)
+                print('enviamos actualización de tablero')
                 
 
             conn.send(tablero.get_info())
