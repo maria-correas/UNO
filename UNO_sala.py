@@ -48,9 +48,10 @@ class Mazo:
                 self.cartas.append(Carta(valor,color))
             self.cartas.append(Carta("Cambio de color","Neutro"))   
         random.shuffle(self.cartas) #esto es para barajar las cartas
-         
+    '''    
     def muestraCarta(self): #muestra la ultima carta 
         return f"{self.cartas[-1].valor} {self.cartas[-1].color}"
+    '''
 
     def robar(self):
         carta = self.cartas.pop(0)
@@ -77,12 +78,14 @@ class Tablero(object):
         self.dispo = manager.list([True,True,True])
         #self.mazo = manager.list(Mazo())
 
-    
+    '''
     def get_player(self, idd):
         return self.players[idd]
-
+    
+    
     def get_carta(self):
         return self.carta["carta"]
+    '''
     
     def change_carta(self,cartita):
         self.lock.acquire()
@@ -148,7 +151,7 @@ class Tablero(object):
             p.mano.append(carta)
         self.players[idd] = p
         self.lock.release()
-    
+    '''
     def change_dispo(self,idd):
         self.lock.acquire()
         p = self.dispo
@@ -167,7 +170,7 @@ class Tablero(object):
                 return False
         self.lock.release()
         return True
-    
+    '''
     def change_bloq(self,idd):
         self.lock.acquire()
         p = self.players[idd] 
@@ -208,7 +211,7 @@ class Player():
             p.append(carta)
         self.mano = p
           
-            
+    '''        
     def puede_echar(self, carta, tablero):
         return ((carta.valor == tablero.carta["carta"].valor) or 
                 (carta.color == tablero.carta["carta"].color) or 
@@ -219,7 +222,7 @@ class Player():
         import time 
         print('Durmiendo un tiempo')
         time.sleep(random.random()*20)
-
+    '''
         
 
 mazo = Mazo() 

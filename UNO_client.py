@@ -61,7 +61,7 @@ class Tablero():
         self.running = True
         self.mazo = mazo
 
-
+    '''
     def get_carta(self):
         return self.carta["carta"]
 
@@ -70,7 +70,7 @@ class Tablero():
 
     def set_contador(self, idd):
         self.contador[idd]= len(self.players[idd].mano)
-        
+    '''    
     def is_running(self):
         return self.running
 
@@ -79,17 +79,7 @@ class Tablero():
         
     def __str__(self):
         return str(self.carta["carta"])
-
-        
-    def get_info(self):
-        info = {            
-            'carta_mesa': self.carta.get_carta(),
-            'contador': self.contador,
-            'is_running': self.running.value == 1,
-            'players': None
-        }
-        return info
-
+    
     def update(self, gameinfo):
         self.carta["carta"] = inverso_carta(gameinfo['carta_mesa'])
         self.contador = inverso_contador(gameinfo['contador'])
@@ -98,6 +88,17 @@ class Tablero():
             self.players[i]= inverso_player(separa_players(gameinfo['players'])[i])
 
         
+'''        
+    def get_info(self):
+        info = {            
+            'carta_mesa': self.carta.get_carta(),
+            'contador': self.contador,
+            'is_running': self.running.value == 1,
+            'players': None
+        }
+        return info
+'''
+    
 
     
 def inverso_carta(info):
@@ -154,7 +155,7 @@ class Player():
         
         #return f"Jugador {self.nombre} tiene {self.mano}"
     
-    
+    '''
     def robar(self, numero, cartas):
         for i in range (numero):
             carta = mazo.robar()
@@ -163,7 +164,7 @@ class Player():
             
     def puede_echar(self, carta, tablero):
         return ((carta.valor == tablero.carta["carta"].valor) or (carta.color == tablero.carta["carta"].color) or (carta.valor == "Cambio de color"))
-
+    '''
 
              
 
