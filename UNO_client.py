@@ -61,16 +61,7 @@ class Tablero():
         self.running = True
         self.mazo = mazo
 
-    '''
-    def get_carta(self):
-        return self.carta["carta"]
-
-    def get_contador(self):
-        return self.contador
-
-    def set_contador(self, idd):
-        self.contador[idd]= len(self.players[idd].mano)
-    '''    
+   
     def is_running(self):
         return self.running
 
@@ -88,17 +79,7 @@ class Tablero():
             self.players[i]= inverso_player(separa_players(gameinfo['players'])[i])
 
         
-'''        
-    def get_info(self):
-        info = {            
-            'carta_mesa': self.carta.get_carta(),
-            'contador': self.contador,
-            'is_running': self.running.value == 1,
-            'players': None
-        }
-        return info
-'''
-    
+
 
     
 def inverso_carta(info):
@@ -154,23 +135,11 @@ class Player():
             
         
         #return f"Jugador {self.nombre} tiene {self.mano}"
-    
-    '''
-    def robar(self, numero, cartas):
-        for i in range (numero):
-            carta = mazo.robar()
-            self.mano.append(carta)
-          
-            
-    def puede_echar(self, carta, tablero):
-        return ((carta.valor == tablero.carta["carta"].valor) or (carta.color == tablero.carta["carta"].color) or (carta.valor == "Cambio de color"))
-    '''
-
-             
+  
 
 mazo = Mazo() 
 
-def main(ip_address,port):
+def main(ip_address):
 
     try:
         with Client((ip_address, port), authkey=b'secret password') as conn:
@@ -217,4 +186,4 @@ if __name__=="__main__":
     elif len(sys.argv)>2:
         ip_address = sys.argv[1]
         port = int(sys.argv[2])
-    main(ip_address,port)
+    main(ip_address)
