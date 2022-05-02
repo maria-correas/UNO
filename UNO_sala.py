@@ -73,9 +73,7 @@ class Tablero(object):
         self.lock = Lock()
         self.dispo = manager.list([True,True,True])
         #self.mazo = manager.list(Mazo())
-
-  
-    
+ 
     def change_carta(self,cartita):
         self.lock.acquire()
         self.carta["carta"] = cartita
@@ -264,6 +262,21 @@ def player(idd, conn, tablero):
   
 def main(ip_address,port):
     manager = Manager()
+    print("")
+    print("---REGLAS DE JUEGO---:")
+    print("Se trata de una versión modificada del tradicional juego del UNO ")
+    print("")
+    print("En este caso hay una carta central y todos a la vex trataremos de echar una carta de tal forma que coincida con la carta central en numero o color ")
+    print("")
+    print("Tenemos cartas especiales como bloqueo, cambio de color o chupate 2")
+    print("ganará el juego aquel que se quede primero sin cartas")
+    print("ATENCIÓN: para saleccionar una carta tendrás que poner el numero de la posicion que ocupa en tu lista de cartas, indexada por el 0")
+    print("")
+    print("por ejemplo: [(Amarillo,9), (Azul, 3) , (Verde, 7)] si quiero elegir la carta(Azul,3) tendré que poner 1")
+    print("BLOUQEO: tendré que ser un buen estratega para saber cuando utilizar esta carta, pues si echo esta carta dejare de jugar durante un tiempo")
+    print("")
+    print("Cambio de color: tendré que indicarlo de esta manera posición Color , el nombre del color debe estar en Mayusculas")
+    
     try:
         with Listener((ip_address, port),
                       authkey=b'secret password') as listener:

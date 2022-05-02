@@ -53,8 +53,6 @@ class Mazo():
 #clase tablero 
 class Tablero():
     def __init__(self):
-
-        #self.carta = {"carta": Carta(random.choice(valores),random.choice(colores))}
         self.carta = {"carta": mazo.robar()}
         self.players = [Player(i) for i in range(3)]
         self.contador= [7,7,7]
@@ -147,12 +145,10 @@ def main(ip_address):
             idd = conn.recv() #,gameinfo
             print(f"Soy el jugador {idd}")
             gameinfo = conn.recv()
-            #print(gameinfo) 
             tablero = Tablero()
             tablero.update(gameinfo)
             print('nuestra mano es '+ str(tablero.players[idd]))
             print("La carta central es: " + str(tablero.carta))
-            #display = Display(game)
             while tablero.is_running():
                 events = input('¿Qué quieres hacer ahora? ') #display.analyze_events(side)
                 #for ev in events:
@@ -161,8 +157,6 @@ def main(ip_address):
                     tablero.stop()
                 recibido = conn.recv()
                 print(recibido)
-                
-                
                 gameinfo = conn.recv()
                 tablero.update(gameinfo)
                 print('nuestra mano es '+ str(tablero.players[idd]))
@@ -170,12 +164,8 @@ def main(ip_address):
                 print("La carta central es: " + str(tablero.carta))
                 print("")
                 print("")
-                #display.refresh()
-                #display.tick()
     except:
         traceback.print_exc()
-    #finally:
-     #   pygame.quit() #duda como cerrarlo
 
 
 if __name__=="__main__":
@@ -186,4 +176,21 @@ if __name__=="__main__":
     elif len(sys.argv)>2:
         ip_address = sys.argv[1]
         port = int(sys.argv[2])
+    print("")
+    print("---REGLAS DE JUEGO---:")
+    print("Se trata de una versión modificada del tradicional juego del UNO ")
+    print("")
+    print("En este caso hay una carta central y todos a la vez trataremos de echar una carta de tal forma que coincida con la carta central en número o color ")
+    print("el objetivo es quedarse sin cartas, coronandose este jugador como claro GANADOR")
+    print("")
+    print("Tenemos cartas especiales como bloqueo, cambio de color o chupate 2")
+    print("")
+    print("ATENCIÓN: para saleccionar una carta tendrás que poner el nÚmero de la posición que ocupa en tu lista de cartas, indexada por el 0")
+    print("")
+    print("por ejemplo: [(Amarillo,9), (Azul, 3) , (Verde, 7)] si quiero elegir la carta (Azul,3) tendré que poner 1")
+    print("BLOUQEO: el resto de jugadores quedará bloqueado durante un tiempo")
+    print("")
+    print("CAMBIO DE COLOR: tendré que indicarlo de esta manera (posición, Color) , el nombre del color debe estar en Mayusculas")
+    print("")
+    print("+2: todo el mundo excepto el jugador que ha tirado la carta chupará dos cartas")    
     main(ip_address)
