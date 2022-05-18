@@ -1,5 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+"""
+Created on Wed May 18 20:14:34 2022
+
+@author: mat
+"""
+
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 
 """
 EL UNO VERSIÓN RÁPIDA
@@ -53,13 +61,24 @@ class Mazo():
 #clase tablero 
 class Tablero():
     def __init__(self):
+
+        #self.carta = {"carta": Carta(random.choice(valores),random.choice(colores))}
         self.carta = {"carta": mazo.robar()}
         self.players = [Player(i) for i in range(3)]
         self.contador= [7,7,7]
         self.running = True
         self.mazo = mazo
 
-   
+
+    def get_carta(self):
+        return self.carta["carta"]
+
+    def get_contador(self):
+        return self.contador
+
+    def set_contador(self, idd):
+        self.contador[idd]= len(self.players[idd].mano)
+        
     def is_running(self):
         return self.running
 
@@ -68,7 +87,17 @@ class Tablero():
         
     def __str__(self):
         return str(self.carta["carta"])
-    
+
+        
+    def get_info(self):
+        info = {            
+            'carta_mesa': self.carta.get_carta(),
+            'contador': self.contador,
+            'is_running': self.running.value == 1,
+            'players': None
+        }
+        return info
+
     def update(self, gameinfo):
         self.carta["carta"] = inverso_carta(gameinfo['carta_mesa'])
         self.contador = inverso_contador(gameinfo['contador'])
@@ -77,7 +106,6 @@ class Tablero():
             self.players[i]= inverso_player(separa_players(gameinfo['players'])[i])
 
         
-
 
     
 def inverso_carta(info):
@@ -133,11 +161,23 @@ class Player():
             
         
         #return f"Jugador {self.nombre} tiene {self.mano}"
-  
+    
+    
+    def robar(self, numero, cartas):
+        for i in range (numero):
+            carta = mazo.robar()
+            self.mano.append(carta)
+          
+            
+    def puede_echar(self, carta, tablero):
+        return ((carta.valor == tablero.carta["carta"].valor) or (carta.color == tablero.carta["carta"].color) or (carta.valor == "Cambio de color"))
+
+
+             
 
 mazo = Mazo() 
 
-def main(ip_address):
+def main(ip_address,port):
 
     try:
         with Client((ip_address, port), authkey=b'secret password') as conn:
@@ -145,10 +185,12 @@ def main(ip_address):
             idd = conn.recv() #,gameinfo
             print(f"Soy el jugador {idd}")
             gameinfo = conn.recv()
+            #print(gameinfo) 
             tablero = Tablero()
             tablero.update(gameinfo)
             print('nuestra mano es '+ str(tablero.players[idd]))
             print("La carta central es: " + str(tablero.carta))
+            #display = Display(game)
             while tablero.is_running():
                 events = input('¿Qué quieres hacer ahora? ') #display.analyze_events(side)
                 #for ev in events:
@@ -157,15 +199,19 @@ def main(ip_address):
                     tablero.stop()
                 recibido = conn.recv()
                 print(recibido)
+                
+                
                 gameinfo = conn.recv()
                 tablero.update(gameinfo)
                 print('nuestra mano es '+ str(tablero.players[idd]))
                 print("El número de cartas de los jugadores es: " + str(tablero.contador))
                 print("La carta central es: " + str(tablero.carta))
-                print("")
-                print("")
+                #display.refresh()
+                #display.tick()
     except:
         traceback.print_exc()
+    #finally:
+     #   pygame.quit() #duda como cerrarlo
 
 
 if __name__=="__main__":
@@ -173,24 +219,7 @@ if __name__=="__main__":
     port= 6000
     if len(sys.argv)==2:
         ip_address = sys.argv[1]
-    elif len(sys.argv)>2:
+    if len(sys.argv)>2:
         ip_address = sys.argv[1]
         port = int(sys.argv[2])
-    print("")
-    print("---REGLAS DE JUEGO---:")
-    print("Se trata de una versión modificada del tradicional juego del UNO ")
-    print("")
-    print("En este caso hay una carta central y todos a la vez trataremos de echar una carta de tal forma que coincida con la carta central en número o color ")
-    print("el objetivo es quedarse sin cartas, coronandose este jugador como claro GANADOR")
-    print("")
-    print("Tenemos cartas especiales como bloqueo, cambio de color o chupate 2")
-    print("")
-    print("ATENCIÓN: para saleccionar una carta tendrás que poner el nÚmero de la posición que ocupa en tu lista de cartas, indexada por el 0")
-    print("")
-    print("por ejemplo: [(Amarillo,9), (Azul, 3) , (Verde, 7)] si quiero elegir la carta (Azul,3) tendré que poner 1")
-    print("BLOUQEO: el resto de jugadores quedará bloqueado durante un tiempo")
-    print("")
-    print("CAMBIO DE COLOR: tendré que indicarlo de esta manera (posición, Color) , el nombre del color debe estar en Mayusculas")
-    print("")
-    print("+2: todo el mundo excepto el jugador que ha tirado la carta chupará dos cartas")    
-    main(ip_address)
+    main(ip_address,port)
